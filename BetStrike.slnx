@@ -4,6 +4,7 @@
     <File Path="Apostas_Tables.sql" />
   </Folder>
   <Folder Name="/Database/FPF/">
+    <File Path="FPF_StoredProcedures.sql" />
     <File Path="FPF_Tables.sql" />
   </Folder>
   <Folder Name="/Database/Pagamentos/">
