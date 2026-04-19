@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="BettingAPI/BettingAPI.csproj" />
+  <Project Path="ResultsAPI/ResultsAPI.csproj" />
+</Solution>
