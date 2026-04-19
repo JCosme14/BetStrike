@@ -1,0 +1,12 @@
+USE FPF;
+
+CREATE TABLE Jogo (
+    ID INT IDENTITY(1,1) PRIMARY KEY,
+    Codigo_Jogo VARCHAR(20) NOT NULL UNIQUE,
+    Data_Hora_Inicio DATETIME NOT NULL,
+    Equipa_Casa VARCHAR(100) NOT NULL,
+    Equipa_Fora VARCHAR(100) NOT NULL,
+    Golos_Casa INT DEFAULT 0,
+    Golos_Fora INT DEFAULT 0,
+    Estado INT NOT NULL DEFAULT 1
+);

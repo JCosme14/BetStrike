@@ -1,4 +1,14 @@
 <Solution>
+  <Folder Name="/Database/" />
+  <Folder Name="/Database/Apostas/">
+    <File Path="Apostas_Tables.sql" />
+  </Folder>
+  <Folder Name="/Database/FPF/">
+    <File Path="FPF_Tables.sql" />
+  </Folder>
+  <Folder Name="/Database/Pagamentos/">
+    <File Path="Pagamentos_Tables.sql" />
+  </Folder>
   <Project Path="BettingAPI/BettingAPI.csproj" />
   <Project Path="DataGenerator/DataGenerator.csproj" />
   <Project Path="PaymentsAPI/PaymentsAPI.csproj" />
