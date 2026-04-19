@@ -1,4 +1,6 @@
 <Solution>
   <Project Path="BettingAPI/BettingAPI.csproj" />
+  <Project Path="DataGenerator/DataGenerator.csproj" />
+  <Project Path="PaymentsAPI/PaymentsAPI.csproj" />
   <Project Path="ResultsAPI/ResultsAPI.csproj" />
 </Solution>
