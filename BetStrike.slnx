@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/Database/" />
   <Folder Name="/Database/Apostas/">
+    <File Path="Apostas_StoredProcedures.sql" />
     <File Path="Apostas_Tables.sql" />
   </Folder>
   <Folder Name="/Database/FPF/">
