@@ -77,7 +77,7 @@ var tasks = jogosGerados.Select(async codigo =>
     // Simulate 9 intervals of 10 seconds (90 minutes)
     for (int minuto = 0; minuto < 9; minuto++)
     {
-        await Task.Delay(1000); //TEMPO REDUZIDO PARA TESTES
+        await Task.Delay(10000); //TEMPO REDUZIDO PARA TESTES
 
         // Random chance of goal each interval
         if (r.Next(0, 10) < 2) golosCasa++;

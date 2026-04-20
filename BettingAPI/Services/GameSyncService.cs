@@ -31,7 +31,7 @@ namespace BettingAPI.Services
                     Console.WriteLine($"Sync error: {ex.Message}");
                 }
 
-                await Task.Delay(10000, stoppingToken); // sync every 10 seconds
+                await Task.Delay(10000, stoppingToken);
             }
         }
 
@@ -58,10 +58,8 @@ namespace BettingAPI.Services
                 using var conn = _db.GetConnection();
                 conn.Open();
 
-                // Check if game exists
                 if (!JogoExists(conn, codigo))
                 {
-                    // Insert new game
                     using var cmd = new SqlCommand("sp_InsertJogo", conn);
                     cmd.CommandType = System.Data.CommandType.StoredProcedure;
                     cmd.Parameters.AddWithValue("@Codigo_Jogo", codigo);
@@ -75,7 +73,6 @@ namespace BettingAPI.Services
                 }
                 else
                 {
-                    // Update existing game
                     using var cmd = new SqlCommand("sp_UpdateJogo", conn);
                     cmd.CommandType = System.Data.CommandType.StoredProcedure;
                     cmd.Parameters.AddWithValue("@Codigo_Jogo", codigo);
@@ -84,6 +81,28 @@ namespace BettingAPI.Services
                     {
                         cmd.ExecuteNonQuery();
                         Console.WriteLine($"Game updated: {codigo} - Estado: {estado}");
+
+                        if (estado == 3)
+                        {
+                            if (!ResultadoExists(conn, codigo))
+                            {
+                                using var cmdRes = new SqlCommand("sp_InsertResultado", conn);
+                                cmdRes.CommandType = System.Data.CommandType.StoredProcedure;
+                                var jogoId = GetJogoId(conn, codigo);
+                                cmdRes.Parameters.AddWithValue("@Jogo_ID", jogoId);
+                                cmdRes.Parameters.AddWithValue("@Golos_Casa", golosCasa);
+                                cmdRes.Parameters.AddWithValue("@Golos_Fora", golosFora);
+                                try
+                                {
+                                    cmdRes.ExecuteNonQuery();
+                                    Console.WriteLine($"Resultado inserted: {codigo} - {golosCasa}:{golosFora}");
+                                }
+                                catch (SqlException ex)
+                                {
+                                    Console.WriteLine($"Error inserting resultado {codigo}: {ex.Message}");
+                                }
+                            }
+                        }
                     }
                     catch (SqlException ex)
                     {
@@ -98,6 +117,22 @@ namespace BettingAPI.Services
             using var cmd = new SqlCommand("SELECT COUNT(1) FROM Jogo WHERE Codigo_Jogo = @Codigo_Jogo", conn);
             cmd.Parameters.AddWithValue("@Codigo_Jogo", codigo);
             return (int)cmd.ExecuteScalar() > 0;
+        }
+
+        private bool ResultadoExists(SqlConnection conn, string codigo)
+        {
+            using var cmd = new SqlCommand(@"SELECT COUNT(1) FROM Resultado r 
+                INNER JOIN Jogo j ON r.Jogo_ID = j.ID 
+                WHERE j.Codigo_Jogo = @Codigo_Jogo", conn);
+            cmd.Parameters.AddWithValue("@Codigo_Jogo", codigo);
+            return (int)cmd.ExecuteScalar() > 0;
+        }
+
+        private int GetJogoId(SqlConnection conn, string codigo)
+        {
+            using var cmd = new SqlCommand("SELECT ID FROM Jogo WHERE Codigo_Jogo = @Codigo_Jogo", conn);
+            cmd.Parameters.AddWithValue("@Codigo_Jogo", codigo);
+            return (int)cmd.ExecuteScalar();
         }
     }
 }
