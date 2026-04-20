@@ -1,15 +1,13 @@
 <Solution>
   <Folder Name="/Database/" />
   <Folder Name="/Database/Apostas/">
-    <File Path="Apostas_StoredProcedures.sql" />
-    <File Path="Apostas_Tables.sql" />
+    <File Path="../../../../Documents/Apostas.sql" />
   </Folder>
   <Folder Name="/Database/FPF/">
-    <File Path="FPF_StoredProcedures.sql" />
-    <File Path="FPF_Tables.sql" />
+    <File Path="../../../../Documents/FPF.sql" />
   </Folder>
   <Folder Name="/Database/Pagamentos/">
-    <File Path="Pagamentos_Tables.sql" />
+    <File Path="../../../../Documents/Pagamentos.sql" />
   </Folder>
   <Project Path="BettingAPI/BettingAPI.csproj" />
   <Project Path="DataGenerator/DataGenerator.csproj" />

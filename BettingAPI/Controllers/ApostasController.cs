@@ -105,7 +105,7 @@ namespace BettingAPI.Controllers
                 var id = cmd.ExecuteScalar();
                 return CreatedAtAction(nameof(GetAposta), new { id }, new { id });
             }
-            catch (SqlException ex) when (ex.Number == 50006)
+            catch (SqlException ex)
             {
                 return BadRequest(new { message = ex.Message });
             }

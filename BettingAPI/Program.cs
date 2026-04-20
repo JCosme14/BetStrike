@@ -6,6 +6,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<DatabaseHelper>();
+builder.Services.AddHostedService<BettingAPI.Services.GameSyncService>();
 
 var app = builder.Build();
 

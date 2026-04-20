@@ -141,3 +141,18 @@ namespace BettingAPI.Controllers
             conn.Open();
 
             using var cmd = new SqlCommand("sp_DeleteJogo", conn);
+            cmd.CommandType = System.Data.CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@Codigo_Jogo", codigo);
+
+            try
+            {
+                cmd.ExecuteNonQuery();
+                return Ok(new { message = "Jogo removido com sucesso." });
+            }
+            catch (SqlException ex) when (ex.Number == 50004)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+    }
+}

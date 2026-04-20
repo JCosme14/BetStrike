@@ -125,11 +125,7 @@ namespace ResultsAPI.Controllers
                 cmd.ExecuteNonQuery();
                 return Ok(new { message = "Jogo atualizado com sucesso." });
             }
-            catch (SqlException ex) when (ex.Number == 50002)
-            {
-                return NotFound(new { message = ex.Message });
-            }
-            catch (SqlException ex) when (ex.Number == 50003)
+            catch (SqlException ex)
             {
                 return BadRequest(new { message = ex.Message });
             }
