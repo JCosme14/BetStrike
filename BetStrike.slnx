@@ -9,6 +9,14 @@
   <Folder Name="/Database/Pagamentos/">
     <File Path="../../../../Documents/Pagamentos.sql" />
   </Folder>
+  <Folder Name="/db-init/">
+    <File Path="../../../../Documents/Apostas.sql" />
+    <File Path="../../../../Documents/FPF.sql" />
+    <File Path="../../../../Documents/Pagamentos.sql" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path="docker-compose.yml" />
+  </Folder>
   <Project Path="BettingAPI/BettingAPI.csproj" />
   <Project Path="DataGenerator/DataGenerator.csproj" />
   <Project Path="PaymentsAPI/PaymentsAPI.csproj" />
