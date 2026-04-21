@@ -1,15 +1,27 @@
 ﻿using System.Text;
 using System.Text.Json;
 
-Console.WriteLine("Waiting for API to start...");
-await Task.Delay(5000);
+// Read the URLs from Environment Variables (set in docker-compose)
+// Fallback to localhost only for local development outside Docker
+string resultsApiBase = Environment.GetEnvironmentVariable("ResultsAPI__BaseUrl") ?? "https://localhost:7023";
+string bettingApiBase = Environment.GetEnvironmentVariable("BettingAPI__BaseUrl") ?? "https://localhost:7025";
 
-var client = new HttpClient();
-var baseUrl = "https://localhost:7023/api/jogos";
+// Use the environment variables or default to Docker service names
+string resultsApiUrl = "http://results-api:8080/api/jogos";
+string bettingApiUrl = "http://betting-api:8080/api/apostas";
+
+Console.WriteLine($"Results API: {resultsApiUrl}");
+Console.WriteLine($"Betting API: {bettingApiUrl}");
+Console.WriteLine("Waiting for APIs to start...");
+
+// Wait a bit longer to ensure SQL Server and APIs are fully healthy
+await Task.Delay(10000);
 
 var handler = new HttpClientHandler();
+// This allows bypass of SSL certificate checks for internal Docker traffic
 handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
-client = new HttpClient(handler);
+
+var client = new HttpClient(handler);
 
 var equipas = new List<string>
 {
@@ -21,12 +33,11 @@ var equipas = new List<string>
 
 // Phase 1 - Generate and publish calendar
 Console.WriteLine("=== Phase 1 - Publishing Calendar ===");
-
 var random = new Random();
 var equipasDisponiveis = equipas.Take(18).ToList();
 var emparelhamentos = new List<(string casa, string fora)>();
-
 var shuffled = equipasDisponiveis.OrderBy(x => random.Next()).ToList();
+
 for (int i = 0; i < shuffled.Count; i += 2)
 {
     emparelhamentos.Add((shuffled[i], shuffled[i + 1]));
@@ -52,50 +63,52 @@ for (int i = 0; i < emparelhamentos.Count; i++)
 
     var json = JsonSerializer.Serialize(jogo);
     var content = new StringContent(json, Encoding.UTF8, "application/json");
-    var response = await client.PostAsync(baseUrl, content);
 
-    if (response.IsSuccessStatusCode)
-        Console.WriteLine($"Game published: {codigo} - {emparelhamentos[i].casa} vs {emparelhamentos[i].fora}");
-    else
-        Console.WriteLine($"Error publishing: {codigo} - {await response.Content.ReadAsStringAsync()}");
+    try
+    {
+        var response = await client.PostAsync(resultsApiUrl, content);
+        if (response.IsSuccessStatusCode)
+            Console.WriteLine($"Game published: {codigo} - {emparelhamentos[i].casa} vs {emparelhamentos[i].fora}");
+        else
+            Console.WriteLine($"Error publishing {codigo}: {response.StatusCode} - {await response.Content.ReadAsStringAsync()}");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Connection Failed for {codigo}: {ex.Message}");
+    }
 
     jogosGerados.Add(codigo);
 }
 
 // Phase 2 - Simulate games
 Console.WriteLine("\n=== Phase 2 - Simulating Games ===");
-
 var tasks = jogosGerados.Select(async codigo =>
 {
     var r = new Random();
     int golosCasa = 0, golosFora = 0;
 
     // Start game
-    await UpdateJogo(client, baseUrl, codigo, 2, golosCasa, golosFora);
+    await UpdateJogo(client, resultsApiUrl, codigo, 2, golosCasa, golosFora);
     Console.WriteLine($"{codigo} - Started");
 
-    // Simulate 9 intervals of 10 seconds (90 minutes)
+    // Simulate 9 intervals
     for (int minuto = 0; minuto < 9; minuto++)
     {
-        await Task.Delay(10000); //TEMPO REDUZIDO PARA TESTES
+        await Task.Delay(5000); // Reduced delay for testing
 
-        // Random chance of goal each interval
         if (r.Next(0, 10) < 2) golosCasa++;
         if (r.Next(0, 10) < 2) golosFora++;
 
-        await UpdateJogo(client, baseUrl, codigo, 2, golosCasa, golosFora);
-        Console.WriteLine($"{codigo} - {golosCasa}:{golosFora}");
+        await UpdateJogo(client, resultsApiUrl, codigo, 2, golosCasa, golosFora);
     }
 
     // Finish game
-    await UpdateJogo(client, baseUrl, codigo, 3, golosCasa, golosFora);
+    await UpdateJogo(client, resultsApiUrl, codigo, 3, golosCasa, golosFora);
     Console.WriteLine($"{codigo} - Finished! Final: {golosCasa}:{golosFora}");
 });
 
 await Task.WhenAll(tasks);
 Console.WriteLine("\n=== All games finished! ===");
-Console.WriteLine("Press any key to exit...");
-Console.ReadKey();
 
 async Task UpdateJogo(HttpClient httpClient, string url, string codigo, int estado, int golosCasa, int golosFora)
 {

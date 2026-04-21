@@ -8,11 +8,16 @@ namespace BettingAPI.Services
     {
         private readonly DatabaseHelper _db;
         private readonly HttpClient _httpClient;
-        private readonly string _fpfApiUrl = "https://localhost:7023/api/jogos";
+        private readonly string _fpfApiUrl;
 
         public GameSyncService(DatabaseHelper db)
         {
             _db = db;
+            // Use Docker service name if in container, otherwise localhost for local development
+            _fpfApiUrl = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Container"
+                ? "http://results-api:8080/api/jogos"
+                : "https://localhost:7023/api/jogos";
+
             var handler = new HttpClientHandler();
             handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
             _httpClient = new HttpClient(handler);

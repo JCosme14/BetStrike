@@ -1,6 +1,95 @@
-@BettingAPI_HostAddress = http://localhost:5131
+### ========== BETSTRIKE BETTING API TESTS ==========
+### Docker URLs (when running docker-compose)
+@BettingAPI = http://localhost:5002
+@ResultsAPI = http://localhost:5001
+@PaymentsAPI = http://localhost:5003
 
-GET {{BettingAPI_HostAddress}}/weatherforecast/
+### ========== RESULTS API - GET GAMES ==========
+GET {{ResultsAPI}}/api/jogos
+Accept: application/json
+
+###
+
+### Get single game by code
+GET {{ResultsAPI}}/api/jogos/FUT-2026-0101
+Accept: application/json
+
+###
+
+### ========== BETTING API - GET APOSTAS ==========
+GET {{BettingAPI}}/api/apostas
+Accept: application/json
+
+###
+
+### Get apostas filtered by user
+GET {{BettingAPI}}/api/apostas?utilizadorId=1
+Accept: application/json
+
+###
+
+### Get apostas filtered by game
+GET {{BettingAPI}}/api/apostas?jogoId=1
+Accept: application/json
+
+###
+
+### ========== RESULTS API - CREATE GAME ==========
+POST {{ResultsAPI}}/api/jogos
+Content-Type: application/json
+
+{
+  "codigo_Jogo": "FUT-2026-TEST-001",
+  "data_Hora_Inicio": "2026-04-25T15:00:00",
+  "equipa_Casa": "Benfica",
+  "equipa_Fora": "Porto",
+  "golos_Casa": 0,
+  "golos_Fora": 0,
+  "estado": 1
+}
+
+###
+
+### ========== RESULTS API - UPDATE GAME STATE ==========
+PUT {{ResultsAPI}}/api/jogos/FUT-2026-0101
+Content-Type: application/json
+
+{
+  "codigo_Jogo": "FUT-2026-0101",
+  "estado": 3,
+  "golos_Casa": 2,
+  "golos_Fora": 1
+}
+
+###
+
+### ========== BETTING API - CREATE USER ==========
+POST {{BettingAPI}}/api/utilizadores
+Content-Type: application/json
+
+{
+  "nome": "Test User",
+  "email": "test@example.com"
+}
+
+###
+
+### ========== BETTING API - CREATE BET ==========
+POST {{BettingAPI}}/api/apostas
+Content-Type: application/json
+
+{
+  "jogo_ID": 1,
+  "utilizador_ID": 1,
+  "tipo_Aposta": "1X2",
+  "valor_Apostado": 10.00,
+  "odd_Momento": 1.85
+}
+
+###
+
+### ========== PAYMENTS API - GET TRANSACTIONS ==========
+GET {{PaymentsAPI}}/api/transacoes
 Accept: application/json
 
 ###
