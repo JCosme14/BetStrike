@@ -3,6 +3,7 @@
 [![Integracão](https://img.shields.io/badge/Integração-Sistemas-blue)](https://www.utad.pt)
 [![C#](https://img.shields.io/badge/Language-C%23-purple)](https://dotnet.microsoft.com/)
 [![SQL Server](https://img.shields.io/badge/DB-MS%20SQL%20Server-red)](https://www.microsoft.com/sql-server)
+[![Docker](https://img.shields.io/badge/Container-Docker-blue?logo=docker&logoColor=white)](https://www.docker.com)
 
 ## Descrição do Projeto
 Este repositório contém a solução desenvolvida para a disciplina de **Integração de Sistemas (Mestrado em Engenharia Informática - UTAD)**. O projeto foca na automação do fluxo de dados entre a **Federação Portuguesa de Futebol (FPF)** e a plataforma de apostas **BetStrike**, eliminando processos manuais e garantindo a resolução de apostas em tempo real.
