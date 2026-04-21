@@ -77,5 +77,22 @@ services:
       betting-api:
         condition: service_started
 
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "8000:80"
+    environment:
+      - REACT_APP_RESULTS_API=http://results-api:8080
+      - REACT_APP_BETTING_API=http://betting-api:8080
+      - REACT_APP_PAYMENTS_API=http://payments-api:8080
+    depends_on:
+      - results-api
+      - betting-api
+      - payments-api
+    networks:
+      - default
+
 volumes:
   sqldata:
