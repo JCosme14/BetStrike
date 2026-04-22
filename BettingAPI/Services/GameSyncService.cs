@@ -51,6 +51,9 @@ namespace BettingAPI.Services
                 var estadoFpf = jogo.GetProperty("estado").GetInt32();
                 var golosCasa = jogo.GetProperty("golos_Casa").GetInt32();
                 var golosFora = jogo.GetProperty("golos_Fora").GetInt32();
+                string? tipoCompeticao = null;
+                if (jogo.TryGetProperty("tipo_Competicao", out var tc) && tc.ValueKind != JsonValueKind.Null)
+                    tipoCompeticao = tc.GetString();
 
                 using var conn = _db.GetConnection();
                 conn.Open();
@@ -66,7 +69,7 @@ namespace BettingAPI.Services
                     cmd.Parameters.AddWithValue("@Data_Hora_Inicio", dataHoraInicio);
                     cmd.Parameters.AddWithValue("@Equipa_Casa", equipaCasa);
                     cmd.Parameters.AddWithValue("@Equipa_Fora", equipaFora);
-                    cmd.Parameters.AddWithValue("@Tipo_Competicao", DBNull.Value);
+                    cmd.Parameters.AddWithValue("@Tipo_Competicao", (object?)tipoCompeticao ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@Estado", estadoFpf);
                     cmd.ExecuteScalar();
                     Console.WriteLine($"New game synced: {codigo}");
@@ -170,4 +173,4 @@ namespace BettingAPI.Services
             return (int)cmd.ExecuteScalar();
         }
     }
-} 
+}

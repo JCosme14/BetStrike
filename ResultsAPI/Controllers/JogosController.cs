@@ -40,6 +40,8 @@ namespace ResultsAPI.Controllers
                     Data_Hora_Inicio = (DateTime)reader["Data_Hora_Inicio"],
                     Equipa_Casa = reader["Equipa_Casa"].ToString(),
                     Equipa_Fora = reader["Equipa_Fora"].ToString(),
+                    Tipo_Competicao = reader["Tipo_Competicao"] == DBNull.Value
+                        ? null : reader["Tipo_Competicao"].ToString(),
                     Golos_Casa = (int)reader["Golos_Casa"],
                     Golos_Fora = (int)reader["Golos_Fora"],
                     Estado = (int)reader["Estado"]
@@ -70,6 +72,8 @@ namespace ResultsAPI.Controllers
                     Data_Hora_Inicio = (DateTime)reader["Data_Hora_Inicio"],
                     Equipa_Casa = reader["Equipa_Casa"].ToString(),
                     Equipa_Fora = reader["Equipa_Fora"].ToString(),
+                    Tipo_Competicao = reader["Tipo_Competicao"] == DBNull.Value
+                        ? null : reader["Tipo_Competicao"].ToString(),
                     Golos_Casa = (int)reader["Golos_Casa"],
                     Golos_Fora = (int)reader["Golos_Fora"],
                     Estado = (int)reader["Estado"]
@@ -77,7 +81,7 @@ namespace ResultsAPI.Controllers
                 return Ok(jogo);
             }
 
-            return NotFound(new { message = $"Jogo {codigo} não encontrado." });
+            return NotFound(new { message = $"Jogo {codigo} nao encontrado." });
         }
 
         // POST: api/jogos
@@ -93,6 +97,7 @@ namespace ResultsAPI.Controllers
             cmd.Parameters.AddWithValue("@Data_Hora_Inicio", jogo.Data_Hora_Inicio);
             cmd.Parameters.AddWithValue("@Equipa_Casa", jogo.Equipa_Casa);
             cmd.Parameters.AddWithValue("@Equipa_Fora", jogo.Equipa_Fora);
+            cmd.Parameters.AddWithValue("@Tipo_Competicao", (object?)jogo.Tipo_Competicao ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@Estado", jogo.Estado);
 
             try

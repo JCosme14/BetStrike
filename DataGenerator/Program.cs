@@ -19,6 +19,15 @@ var equipas = new List<string>
     "Chaves", "Rio Ave", "Portimonense", "Santa Clara", "Farense"
 };
 
+// Available competitions - assigned round-robin to simulate a mix
+var competicoes = new List<string>
+{
+    "Primeira Liga",
+    "Taça de Portugal",
+    "Liga dos Campeões UEFA",
+    "Liga Europa"
+};
+
 // Phase 1 - Generate and publish calendar
 Console.WriteLine("=== Phase 1 - Publishing Calendar ===");
 
@@ -39,12 +48,15 @@ var jogosGerados = new List<string>();
 for (int i = 0; i < emparelhamentos.Count; i++)
 {
     var codigo = $"FUT-{ano}-{jornada:D2}{(i + 1):D2}";
+    var competicao = competicoes[i % competicoes.Count];
+
     var jogo = new
     {
         codigo_Jogo = codigo,
         data_Hora_Inicio = DateTime.Now.AddMinutes(i * 5),
         equipa_Casa = emparelhamentos[i].casa,
         equipa_Fora = emparelhamentos[i].fora,
+        tipo_Competicao = competicao,
         golos_Casa = 0,
         golos_Fora = 0,
         estado = 1
@@ -55,7 +67,7 @@ for (int i = 0; i < emparelhamentos.Count; i++)
     var response = await client.PostAsync(baseUrl, content);
 
     if (response.IsSuccessStatusCode)
-        Console.WriteLine($"Game published: {codigo} - {emparelhamentos[i].casa} vs {emparelhamentos[i].fora}");
+        Console.WriteLine($"Game published: {codigo} - {emparelhamentos[i].casa} vs {emparelhamentos[i].fora} [{competicao}]");
     else
         Console.WriteLine($"Error publishing: {codigo} - {await response.Content.ReadAsStringAsync()}");
 
@@ -70,16 +82,13 @@ var tasks = jogosGerados.Select(async codigo =>
     var r = new Random();
     int golosCasa = 0, golosFora = 0;
 
-    // Start game
     await UpdateJogo(client, baseUrl, codigo, 2, golosCasa, golosFora);
     Console.WriteLine($"{codigo} - Started");
 
-    // Simulate 9 intervals of 10 seconds (90 minutes)
     for (int minuto = 0; minuto < 9; minuto++)
     {
-        await Task.Delay(10000); //TEMPO REDUZIDO PARA TESTES
+        await Task.Delay(10000);
 
-        // Random chance of goal each interval
         if (r.Next(0, 10) < 2) golosCasa++;
         if (r.Next(0, 10) < 2) golosFora++;
 
@@ -87,7 +96,6 @@ var tasks = jogosGerados.Select(async codigo =>
         Console.WriteLine($"{codigo} - {golosCasa}:{golosFora}");
     }
 
-    // Finish game
     await UpdateJogo(client, baseUrl, codigo, 3, golosCasa, golosFora);
     Console.WriteLine($"{codigo} - Finished! Final: {golosCasa}:{golosFora}");
 });
