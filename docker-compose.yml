@@ -78,21 +78,17 @@ services:
         condition: service_started
 
   frontend:
-    build:
-      context: .
-      dockerfile: frontend/Dockerfile
+    image: nginx:alpine
     ports:
-      - "8000:80"
-    environment:
-      - REACT_APP_RESULTS_API=http://results-api:8080
-      - REACT_APP_BETTING_API=http://betting-api:8080
-      - REACT_APP_PAYMENTS_API=http://payments-api:8080
+      - "3000:80"
+    volumes:
+      - ./index.html:/usr/share/nginx/html/index.html
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
     depends_on:
-      - results-api
       - betting-api
+      - results-api
       - payments-api
-    networks:
-      - default
+
 
 volumes:
   sqldata:

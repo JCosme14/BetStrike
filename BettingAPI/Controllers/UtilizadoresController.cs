@@ -16,6 +16,31 @@ namespace BettingAPI.Controllers
             _db = db;
         }
 
+        // POST: api/utilizadores/login
+        [HttpPost("login")]
+        public IActionResult Login([FromBody] Utilizador utilizador)
+        {
+            using var conn = _db.GetConnection();
+            conn.Open();
+
+            // Simple lookup by email — add password check if you have hashing
+            using var cmd = new SqlCommand("sp_GetUtilizadorByEmail", conn);
+            cmd.CommandType = System.Data.CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@Email", utilizador.Email);
+
+            using var reader = cmd.ExecuteReader();
+            if (reader.Read())
+            {
+                return Ok(new
+                {
+                    id = (int)reader["ID"],
+                    username = reader["Nome"].ToString(),
+                    email = reader["Email"].ToString()
+                });
+            }
+            return Unauthorized(new { message = "Credenciais inválidas." });
+        }
+
         // POST: api/utilizadores
         [HttpPost]
         public IActionResult CreateUtilizador([FromBody] Utilizador utilizador)
