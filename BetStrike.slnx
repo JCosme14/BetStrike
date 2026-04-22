@@ -1,13 +1,18 @@
 <Solution>
-  <Folder Name="/Database/" />
-  <Folder Name="/Database/Apostas/">
-    <File Path="../../../../Documents/Apostas.sql" />
+  <Folder Name="/db-init/">
+    <File Path="db-init/00_create_databases.sql" />
+    <File Path="db-init/init.sh" />
   </Folder>
-  <Folder Name="/Database/FPF/">
-    <File Path="../../../../Documents/FPF.sql" />
-  </Folder>
-  <Folder Name="/Database/Pagamentos/">
-    <File Path="../../../../Documents/Pagamentos.sql" />
+  <Folder Name="/Solution Items/">
+    <File Path="docker-compose.yml" />
+    <File Path=".dockerignore" />
+    <File Path="Apostas_Tables.sql" />
+    <File Path="Apostas_StoredProcedures.sql" />
+    <File Path="Apostas_Trigger.sql" />
+    <File Path="FPF_Tables.sql" />
+    <File Path="FPF_StoredProcedures.sql" />
+    <File Path="Pagamentos_Tables.sql" />
+    <File Path="Pagamentos_StoredProcedures.sql" />
   </Folder>
   <Project Path="BettingAPI/BettingAPI.csproj" />
   <Project Path="DataGenerator/DataGenerator.csproj" />

@@ -2,11 +2,12 @@ USE FPF;
 GO
 
 -- Insert a new game
-CREATE PROCEDURE sp_InsertJogo
+CREATE OR ALTER PROCEDURE sp_InsertJogo
     @Codigo_Jogo VARCHAR(20),
     @Data_Hora_Inicio DATETIME,
     @Equipa_Casa VARCHAR(100),
     @Equipa_Fora VARCHAR(100),
+    @Tipo_Competicao VARCHAR(100) = NULL,
     @Estado INT
 AS
 BEGIN
@@ -16,15 +17,15 @@ BEGIN
         RETURN;
     END
 
-    INSERT INTO Jogo (Codigo_Jogo, Data_Hora_Inicio, Equipa_Casa, Equipa_Fora, Estado)
-    VALUES (@Codigo_Jogo, @Data_Hora_Inicio, @Equipa_Casa, @Equipa_Fora, @Estado);
+    INSERT INTO Jogo (Codigo_Jogo, Data_Hora_Inicio, Equipa_Casa, Equipa_Fora, Tipo_Competicao, Estado)
+    VALUES (@Codigo_Jogo, @Data_Hora_Inicio, @Equipa_Casa, @Equipa_Fora, @Tipo_Competicao, @Estado);
 
     SELECT SCOPE_IDENTITY() AS ID;
 END;
 GO
 
 -- Get all games with optional filters
-CREATE PROCEDURE sp_GetJogos
+CREATE OR ALTER PROCEDURE sp_GetJogos
     @Data DATETIME = NULL,
     @Estado INT = NULL
 AS
@@ -36,7 +37,7 @@ END;
 GO
 
 -- Get a specific game by code
-CREATE PROCEDURE sp_GetJogo
+CREATE OR ALTER PROCEDURE sp_GetJogo
     @Codigo_Jogo VARCHAR(20)
 AS
 BEGIN
@@ -45,7 +46,7 @@ END;
 GO
 
 -- Update a game's state and score
-CREATE PROCEDURE sp_UpdateJogo
+CREATE OR ALTER PROCEDURE sp_UpdateJogo
     @Codigo_Jogo VARCHAR(20),
     @Estado INT,
     @Golos_Casa INT,
@@ -80,7 +81,7 @@ END;
 GO
 
 -- Delete a game (only if Scheduled)
-CREATE PROCEDURE sp_DeleteJogo
+CREATE OR ALTER PROCEDURE sp_DeleteJogo
     @Codigo_Jogo VARCHAR(20)
 AS
 BEGIN

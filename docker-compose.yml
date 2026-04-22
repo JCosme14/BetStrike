@@ -1,0 +1,113 @@
+services:
+  # ============================================
+  # SQL Server - shared by all three databases
+  # ============================================
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: betstrike-sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "BetStrike_2026!"
+      MSSQL_PID: "Developer"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "BetStrike_2026!" -C -Q "SELECT 1" || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - betstrike-net
+
+  # ============================================
+  # Database initialization - runs once to create DBs + schemas
+  # ============================================
+  db-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: betstrike-db-init
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    volumes:
+      - ./db-init:/scripts
+      - ./:/sql-scripts:ro
+    entrypoint: /bin/bash -c "/scripts/init.sh"
+    networks:
+      - betstrike-net
+
+  # ============================================
+  # Results API (FPF) - port 5221 on host
+  # ============================================
+  resultsapi:
+    build:
+      context: .
+      dockerfile: ResultsAPI/Dockerfile
+    container_name: betstrike-resultsapi
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__FPF: "Server=sqlserver,1433;Database=FPF;User Id=sa;Password=BetStrike_2026!;TrustServerCertificate=True;"
+    ports:
+      - "5221:8080"
+    networks:
+      - betstrike-net
+
+  # ============================================
+  # Payments API - port 5224 on host
+  # ============================================
+  paymentsapi:
+    build:
+      context: .
+      dockerfile: PaymentsAPI/Dockerfile
+    container_name: betstrike-paymentsapi
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Pagamentos: "Server=sqlserver,1433;Database=Pagamentos;User Id=sa;Password=BetStrike_2026!;TrustServerCertificate=True;"
+    ports:
+      - "5224:8080"
+    networks:
+      - betstrike-net
+
+  # ============================================
+  # Betting API - port 5223 on host
+  # ============================================
+  bettingapi:
+    build:
+      context: .
+      dockerfile: BettingAPI/Dockerfile
+    container_name: betstrike-bettingapi
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+      resultsapi:
+        condition: service_started
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Apostas: "Server=sqlserver,1433;Database=Apostas;User Id=sa;Password=BetStrike_2026!;TrustServerCertificate=True;"
+      ConnectionStrings__Pagamentos: "Server=sqlserver,1433;Database=Pagamentos;User Id=sa;Password=BetStrike_2026!;TrustServerCertificate=True;"
+      ExternalServices__FpfApiUrl: "http://resultsapi:8080/api/jogos"
+    ports:
+      - "5223:8080"
+    networks:
+      - betstrike-net
+
+# ============================================
+# Named volume so SQL Server data persists across restarts
+# ============================================
+volumes:
+  sqlserver-data:
+
+# ============================================
+# Internal network so containers can resolve each other by name
+# ============================================
+networks:
+  betstrike-net:
+    driver: bridge

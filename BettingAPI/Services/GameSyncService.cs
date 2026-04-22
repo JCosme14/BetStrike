@@ -8,11 +8,13 @@ namespace BettingAPI.Services
     {
         private readonly DatabaseHelper _db;
         private readonly HttpClient _httpClient = new HttpClient();
-        private readonly string _fpfApiUrl = "http://localhost:5221/api/jogos";
+        private readonly string _fpfApiUrl;
 
-        public GameSyncService(DatabaseHelper db)
+        public GameSyncService(DatabaseHelper db, IConfiguration configuration)
         {
             _db = db;
+            _fpfApiUrl = configuration["ExternalServices:FpfApiUrl"]
+                ?? "http://localhost:5221/api/jogos";
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)

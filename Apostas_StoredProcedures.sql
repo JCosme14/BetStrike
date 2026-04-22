@@ -47,10 +47,12 @@ BEGIN
 END;
 GO
 
--- Update a game's state
+-- Update a game's state and live score
 CREATE PROCEDURE sp_UpdateJogo
     @Codigo_Jogo VARCHAR(20),
-    @Estado INT
+    @Estado INT,
+    @Golos_Casa INT = NULL,
+    @Golos_Fora INT = NULL
 AS
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM Jogo WHERE Codigo_Jogo = @Codigo_Jogo)
@@ -74,19 +76,35 @@ BEGIN
         RETURN;
     END
 
-    UPDATE Jogo SET Estado = @Estado WHERE Codigo_Jogo = @Codigo_Jogo;
+    -- Update state and live score (score columns only updated when provided)
+    UPDATE Jogo
+    SET
+        Estado = @Estado,
+        Golos_Casa = ISNULL(@Golos_Casa, Golos_Casa),
+        Golos_Fora = ISNULL(@Golos_Fora, Golos_Fora)
+    WHERE Codigo_Jogo = @Codigo_Jogo;
 
-    -- If game is finished, resolve all pending bets
+    -- If game is finished, insert result FIRST then resolve bets
     IF @Estado = 3
     BEGIN
         DECLARE @Jogo_ID INT;
         SELECT @Jogo_ID = ID FROM Jogo WHERE Codigo_Jogo = @Codigo_Jogo;
 
-        -- Insert default result if none exists
+        -- Insert result before resolving so sp_ResolverApostas can read the score
         IF NOT EXISTS (SELECT 1 FROM Resultado WHERE Jogo_ID = @Jogo_ID)
         BEGIN
             INSERT INTO Resultado (Jogo_ID, Golos_Casa, Golos_Fora)
-            VALUES (@Jogo_ID, 0, 0);
+            VALUES (@Jogo_ID, ISNULL(@Golos_Casa, 0), ISNULL(@Golos_Fora, 0));
+        END
+        ELSE
+        BEGIN
+            -- Update existing result with final score
+            UPDATE Resultado
+            SET
+                Golos_Casa = ISNULL(@Golos_Casa, Golos_Casa),
+                Golos_Fora = ISNULL(@Golos_Fora, Golos_Fora),
+                Data_Hora_Atualizacao = GETDATE()
+            WHERE Jogo_ID = @Jogo_ID;
         END
 
         EXEC sp_ResolverApostas @Jogo_ID;

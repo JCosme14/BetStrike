@@ -11,13 +11,10 @@ builder.Services.AddHostedService<BettingAPI.Services.GameSyncService>();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// Swagger enabled in all environments so it works inside Docker containers too
+app.UseSwagger();
+app.UseSwaggerUI();
 
-app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 

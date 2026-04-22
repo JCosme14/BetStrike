@@ -6,6 +6,8 @@ CREATE TABLE Jogo (
     Data_Hora_Inicio DATETIME NOT NULL,
     Equipa_Casa VARCHAR(100) NOT NULL,
     Equipa_Fora VARCHAR(100) NOT NULL,
+    Golos_Casa INT NOT NULL DEFAULT 0,
+    Golos_Fora INT NOT NULL DEFAULT 0,
     Tipo_Competicao VARCHAR(100),
     Estado INT NOT NULL DEFAULT 1
 );
