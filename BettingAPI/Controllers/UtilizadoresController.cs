@@ -10,33 +10,81 @@ namespace BettingAPI.Controllers
     public class UtilizadoresController : ControllerBase
     {
         private readonly DatabaseHelper _db;
+        private readonly PagamentosDatabaseHelper _pagamentosDb;
 
-        public UtilizadoresController(DatabaseHelper db)
+        public UtilizadoresController(DatabaseHelper db, PagamentosDatabaseHelper pagamentosDb)
         {
             _db = db;
+            _pagamentosDb = pagamentosDb;
         }
 
         // POST: api/utilizadores
         [HttpPost]
         public IActionResult CreateUtilizador([FromBody] Utilizador utilizador)
         {
-            using var conn = _db.GetConnection();
-            conn.Open();
+            // Step 1: Insert user into Apostas DB
+            int newUserId;
 
-            using var cmd = new SqlCommand("sp_InsertUtilizador", conn);
-            cmd.CommandType = System.Data.CommandType.StoredProcedure;
-            cmd.Parameters.AddWithValue("@Nome", utilizador.Nome);
-            cmd.Parameters.AddWithValue("@Email", utilizador.Email);
+            using (var conn = _db.GetConnection())
+            {
+                conn.Open();
 
+                using var cmd = new SqlCommand("sp_InsertUtilizador", conn);
+                cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@Nome", utilizador.Nome);
+                cmd.Parameters.AddWithValue("@Email", utilizador.Email);
+
+                try
+                {
+                    var result = cmd.ExecuteScalar();
+                    newUserId = Convert.ToInt32(result);
+                }
+                catch (SqlException ex) when (ex.Number == 50005)
+                {
+                    return Conflict(new { message = ex.Message });
+                }
+            }
+
+            // Step 2: Create Saldo in Pagamentos DB with 50 euro promotion
+            // If this fails we rollback the user creation to keep systems consistent
             try
             {
-                var id = cmd.ExecuteScalar();
-                return CreatedAtAction(nameof(GetUtilizador), new { id }, new { id, utilizador.Nome, utilizador.Email });
+                using var pagConn = _pagamentosDb.GetConnection();
+                pagConn.Open();
+
+                using var pagCmd = new SqlCommand("sp_CriarSaldoUtilizador", pagConn);
+                pagCmd.CommandType = System.Data.CommandType.StoredProcedure;
+                pagCmd.Parameters.AddWithValue("@Utilizador_ID", newUserId);
+                pagCmd.ExecuteNonQuery();
             }
-            catch (SqlException ex) when (ex.Number == 50005)
+            catch (Exception ex)
             {
-                return Conflict(new { message = ex.Message });
+                // Rollback: delete the user we just created so the system stays consistent
+                try
+                {
+                    using var rollbackConn = _db.GetConnection();
+                    rollbackConn.Open();
+                    using var rollbackCmd = new SqlCommand(
+                        "DELETE FROM Utilizador WHERE ID = @ID", rollbackConn);
+                    rollbackCmd.Parameters.AddWithValue("@ID", newUserId);
+                    rollbackCmd.ExecuteNonQuery();
+                }
+                catch { /* best effort rollback */ }
+
+                return StatusCode(500, new
+                {
+                    message = "Utilizador criado mas falhou a inicializacao do saldo. Operacao revertida.",
+                    detail = ex.Message
+                });
             }
+
+            return CreatedAtAction(nameof(GetUtilizador), new { id = newUserId }, new
+            {
+                id = newUserId,
+                utilizador.Nome,
+                utilizador.Email,
+                saldoInicial = 50.00
+            });
         }
 
         // GET: api/utilizadores/{id}
@@ -63,7 +111,7 @@ namespace BettingAPI.Controllers
                 return Ok(utilizador);
             }
 
-            return NotFound(new { message = $"Utilizador {id} não encontrado." });
+            return NotFound(new { message = $"Utilizador {id} nao encontrado." });
         }
     }
 }

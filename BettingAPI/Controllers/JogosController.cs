@@ -18,7 +18,7 @@ namespace BettingAPI.Controllers
 
         // GET: api/jogos
         [HttpGet]
-        public IActionResult GetJogos([FromQuery] DateTime? data, [FromQuery] int? estado, [FromQuery] string? tipoCompetição)
+        public IActionResult GetJogos([FromQuery] DateTime? data, [FromQuery] int? estado, [FromQuery] string? tipoCompeticao)
         {
             var jogos = new List<Jogo>();
 
@@ -29,7 +29,7 @@ namespace BettingAPI.Controllers
             cmd.CommandType = System.Data.CommandType.StoredProcedure;
             cmd.Parameters.AddWithValue("@Data", data.HasValue ? data.Value : DBNull.Value);
             cmd.Parameters.AddWithValue("@Estado", estado.HasValue ? estado.Value : DBNull.Value);
-            cmd.Parameters.AddWithValue("@Tipo_Competicao", tipoCompetição ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@Tipo_Competicao", tipoCompeticao ?? (object)DBNull.Value);
 
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
@@ -41,8 +41,11 @@ namespace BettingAPI.Controllers
                     Data_Hora_Inicio = (DateTime)reader["Data_Hora_Inicio"],
                     Equipa_Casa = reader["Equipa_Casa"].ToString(),
                     Equipa_Fora = reader["Equipa_Fora"].ToString(),
-                    Tipo_Competicao = reader["Tipo_Competicao"].ToString(),
-                    Estado = (int)reader["Estado"]
+                    Tipo_Competicao = reader["Tipo_Competicao"] == DBNull.Value
+                        ? null : reader["Tipo_Competicao"].ToString(),
+                    Estado = (int)reader["Estado"],
+                    Golos_Casa = (int)reader["Golos_Casa"],
+                    Golos_Fora = (int)reader["Golos_Fora"]
                 });
             }
 
@@ -50,6 +53,7 @@ namespace BettingAPI.Controllers
         }
 
         // GET: api/jogos/{codigo}
+        // Returns full game data including pending bet count and total wagered
         [HttpGet("{codigo}")]
         public IActionResult GetJogo(string codigo)
         {
@@ -60,23 +64,50 @@ namespace BettingAPI.Controllers
             cmd.CommandType = System.Data.CommandType.StoredProcedure;
             cmd.Parameters.AddWithValue("@Codigo_Jogo", codigo);
 
-            using var reader = cmd.ExecuteReader();
-            if (reader.Read())
+            Jogo jogo;
+            using (var reader = cmd.ExecuteReader())
             {
-                var jogo = new Jogo
+                if (!reader.Read())
+                    return NotFound(new { message = $"Jogo {codigo} nao encontrado." });
+
+                jogo = new Jogo
                 {
                     ID = (int)reader["ID"],
                     Codigo_Jogo = reader["Codigo_Jogo"].ToString(),
                     Data_Hora_Inicio = (DateTime)reader["Data_Hora_Inicio"],
                     Equipa_Casa = reader["Equipa_Casa"].ToString(),
                     Equipa_Fora = reader["Equipa_Fora"].ToString(),
-                    Tipo_Competicao = reader["Tipo_Competicao"].ToString(),
-                    Estado = (int)reader["Estado"]
+                    Tipo_Competicao = reader["Tipo_Competicao"] == DBNull.Value
+                        ? null : reader["Tipo_Competicao"].ToString(),
+                    Estado = (int)reader["Estado"],
+                    Golos_Casa = (int)reader["Golos_Casa"],
+                    Golos_Fora = (int)reader["Golos_Fora"]
                 };
-                return Ok(jogo);
             }
 
-            return NotFound(new { message = $"Jogo {codigo} não encontrado." });
+            // Fetch pending bet count and total wagered for this game
+            using var statsCmd = new SqlCommand(@"
+                SELECT
+                    COUNT(CASE WHEN Estado = 1 THEN 1 END) AS ApostasPendentes,
+                    ISNULL(SUM(Valor_Apostado), 0) AS TotalApostado
+                FROM Aposta WHERE Jogo_ID = @Jogo_ID", conn);
+            statsCmd.Parameters.AddWithValue("@Jogo_ID", jogo.ID);
+
+            using var statsReader = statsCmd.ExecuteReader();
+            int apostasPendentes = 0;
+            decimal totalApostado = 0;
+            if (statsReader.Read())
+            {
+                apostasPendentes = (int)statsReader["ApostasPendentes"];
+                totalApostado = (decimal)statsReader["TotalApostado"];
+            }
+
+            return Ok(new
+            {
+                jogo,
+                apostasPendentes,
+                totalApostado
+            });
         }
 
         // POST: api/jogos
@@ -117,6 +148,8 @@ namespace BettingAPI.Controllers
             cmd.CommandType = System.Data.CommandType.StoredProcedure;
             cmd.Parameters.AddWithValue("@Codigo_Jogo", codigo);
             cmd.Parameters.AddWithValue("@Estado", jogo.Estado);
+            cmd.Parameters.AddWithValue("@Golos_Casa", jogo.Golos_Casa);
+            cmd.Parameters.AddWithValue("@Golos_Fora", jogo.Golos_Fora);
 
             try
             {

@@ -5,7 +5,7 @@ Console.WriteLine("Waiting for API to start...");
 await Task.Delay(5000);
 
 var client = new HttpClient();
-var baseUrl = "https://localhost:7023/api/jogos";
+var baseUrl = "http://localhost:5221/api/jogos";
 
 var handler = new HttpClientHandler();
 handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
