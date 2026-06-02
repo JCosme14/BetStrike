@@ -39,9 +39,13 @@ namespace BettingAPI.Controllers
                     var result = cmd.ExecuteScalar();
                     newUserId = Convert.ToInt32(result);
                 }
-                catch (SqlException ex) when (ex.Number == 50005)
+                catch (SqlException ex) when (ex.Number == 50005 || ex.Number == 50000)
                 {
                     return Conflict(new { message = ex.Message });
+                }
+                catch (SqlException ex)
+                {
+                    return BadRequest(new { message = ex.Message });
                 }
             }
 
@@ -112,6 +116,37 @@ namespace BettingAPI.Controllers
             }
 
             return NotFound(new { message = $"Utilizador {id} nao encontrado." });
+        }
+
+        // GET: api/utilizadores/by-email?email={email}
+        [HttpGet("by-email")]
+        public IActionResult GetUtilizadorByEmail([FromQuery] string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                return BadRequest(new { message = "Email é obrigatório." });
+            }
+
+            using var conn = _db.GetConnection();
+            conn.Open();
+
+            using var cmd = new SqlCommand("SELECT * FROM Utilizador WHERE Email = @Email", conn);
+            cmd.Parameters.AddWithValue("@Email", email.Trim());
+
+            using var reader = cmd.ExecuteReader();
+            if (reader.Read())
+            {
+                var utilizador = new Utilizador
+                {
+                    ID = (int)reader["ID"],
+                    Nome = reader["Nome"].ToString(),
+                    Email = reader["Email"].ToString(),
+                    Data_Registo = (DateTime)reader["Data_Registo"]
+                };
+                return Ok(utilizador);
+            }
+
+            return NotFound(new { message = $"Utilizador com email {email} nao encontrado." });
         }
     }
 }

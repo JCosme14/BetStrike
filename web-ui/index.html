@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="pt">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BetStrike</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+    <div class="toast-container" id="toasts"></div>
+
+    <div class="modal-overlay" id="modal-user">
+        <div class="modal">
+            <div class="modal-title">Aceder ou Registar</div>
+            <div class="modal-content">
+                <div id="login-section">
+                    <div class="form-group">
+                        <label class="form-label" for="input-user-email">Email</label>
+                        <input id="input-user-email" class="form-input" type="email" placeholder="joao@exemplo.com" />
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn secondary btn-sm" onclick="showCreateUser()">Novo utilizador</button>
+                        <button class="btn primary btn-sm" onclick="loginUser()">Entrar</button>
+                    </div>
+                </div>
+                <div id="create-section" style="display:none;">
+                    <div class="form-group">
+                        <label class="form-label" for="input-new-name">Nome</label>
+                        <input id="input-new-name" class="form-input" type="text" placeholder="João Silva" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="input-new-email">Email</label>
+                        <input id="input-new-email" class="form-input" type="email" placeholder="joao@exemplo.com" />
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn secondary btn-sm" onclick="showLoginForm()">Voltar</button>
+                        <button class="btn primary btn-sm" onclick="createUser()">Criar conta</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-aposta">
+        <div class="modal">
+            <div class="modal-title">Confirmar Aposta</div>
+            <div class="modal-content">
+                <div class="form-group">
+                    <label class="form-label">Jogo</label>
+                    <div id="modal-aposta-info" style="color:var(--text);"></div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="input-aposta-valor">Valor (€)</label>
+                    <input id="input-aposta-valor" class="form-input" type="number" min="1" step="0.5" placeholder="10"
+                        oninput="updateBetSummary()" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="input-aposta-odd">Odd</label>
+                    <input id="input-aposta-odd" class="form-input" type="number" min="1.01" step="0.01"
+                        placeholder="1.80" oninput="updateBetSummary()" />
+                </div>
+                <div class="apostar-summary">
+                    <div class="apostar-summary-row"><span class="lbl">Valor</span><span class="val"
+                            id="sum-valor">—</span></div>
+                    <div class="apostar-summary-row"><span class="lbl">Odd</span><span class="val" id="sum-odd">—</span>
+                    </div>
+                    <div class="apostar-summary-row total"><span class="lbl">Potencial</span><span class="val"
+                            id="sum-premio">—</span></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn secondary btn-sm" onclick="closeModal('modal-aposta')">Cancelar</button>
+                    <button class="btn primary btn-sm" onclick="submitBet()">Confirmar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-deposito">
+        <div class="modal">
+            <div class="modal-title">Depósito</div>
+            <div class="modal-content">
+                <div class="form-group">
+                    <label class="form-label" for="input-deposito">Valor (€)</label>
+                    <input id="input-deposito" class="form-input" type="number" min="1" step="0.5" placeholder="20" />
+                </div>
+                <div class="modal-footer">
+                    <button class="btn secondary btn-sm" onclick="closeModal('modal-deposito')">Fechar</button>
+                    <button class="btn primary btn-sm" onclick="submitDeposit()">Depositar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="app">
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-text">BetStrike</div>
+                <div class="logo-sub">bookmaker dashboard</div>
+            </div>
+            <div class="user-card">
+                <div class="user-card-label">Conta atual</div>
+                <div id="sidebar-user-name" class="user-card-name">Convidado</div>
+                <div id="sidebar-saldo" class="user-card-saldo">-- €</div>
+                <button id="sidebar-login-btn" class="user-select-btn" onclick="openModal('modal-user')">Entrar /
+                    Registar</button>
+                <button id="sidebar-logout-btn" class="user-select-btn" style="display:none;"
+                    onclick="logoutUser()">Sair</button>
+            </div>
+            <div class="nav-section">Menu</div>
+            <button class="nav-item active" id="nav-jogos" onclick="navTo('jogos', event)">Jogos</button>
+            <button class="nav-item" id="nav-apostas" onclick="navTo('apostas', event)">Apostas</button>
+            <button class="nav-item" id="nav-saldo" onclick="navTo('saldo', event)">Saldo</button>
+            <button class="nav-item" id="nav-config" onclick="navTo('config', event)">Configuração</button>
+            <div class="nav-section">Acesso rápido</div>
+            <button class="nav-item" onclick="openBetModal()" style="color:var(--accent)">Confirmar
+                aposta</button>
+        </aside>
+
+        <main class="main">
+            <header class="page-header">
+                <div class="header-actions">
+                    <button class="btn btn-primary btn-sm" onclick="loadJogos()">Atualizar jogos</button>
+                    <button class="btn secondary btn-sm" onclick="loadSaldo()">Atualizar saldo</button>
+                </div>
+            </header>
+
+            <section class="page-content">
+                <div id="page-jogos" class="page active">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Jogos</div>
+                            <div id="st-jogos" class="stat-value accent">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Ao Vivo</div>
+                            <div id="st-live" class="stat-value blue">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Finalizados</div>
+                            <div id="st-finished" class="stat-value green">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Próximos</div>
+                            <div id="st-upcoming" class="stat-value red">0</div>
+                        </div>
+                    </div>
+                    <div class="filters">
+                        <button class="chip active" onclick="filterJogos(null, this)">Todos</button>
+                        <button class="chip" onclick="filterJogos(1, this)">Ao Vivo</button>
+                        <button class="chip" onclick="filterJogos(2, this)">Finalizados</button>
+                        <button class="chip" onclick="filterJogos(0, this)">Agendados</button>
+                    </div>
+                    <div id="jogos-list" class="grid-2"></div>
+                </div>
+
+                <div id="page-apostas" class="page">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Total</div>
+                            <div id="st-total" class="stat-value accent">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Ganhas</div>
+                            <div id="st-ganhas" class="stat-value green">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Perdidas</div>
+                            <div id="st-perdidas" class="stat-value red">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Pendentes</div>
+                            <div id="st-pendentes" class="stat-value blue">0</div>
+                        </div>
+                    </div>
+                    <div class="filters" id="filtros-apostas">
+                        <button class="chip active" onclick="filterApostas(null, this)">Todas</button>
+                        <button class="chip" onclick="filterApostas(1, this)">Pendentes</button>
+                        <button class="chip" onclick="filterApostas(2, this)">Ganhas</button>
+                        <button class="chip" onclick="filterApostas(3, this)">Perdidas</button>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Jogo</th>
+                                    <th>Tipo</th>
+                                    <th>Valor</th>
+                                    <th>Odd</th>
+                                    <th>Estado</th>
+                                    <th>Data</th>
+                                </tr>
+                            </thead>
+                            <tbody id="apostas-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="page-saldo" class="page">
+                    <div class="saldo-hero">
+                        <div class="saldo-hero-label">Saldo disponível</div>
+                        <div id="saldo-valor" class="saldo-hero-value">-- €</div>
+                        <div id="saldo-update" class="saldo-hero-sub">Nenhuma actualização</div>
+                    </div>
+                    <div class="grid-2">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">Depósito rápido</div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="deposit-valor">Valor</label>
+                                <input id="deposit-valor" class="form-input" type="number" min="1" step="0.5"
+                                    placeholder="25" />
+                            </div>
+                            <button class="btn primary" onclick="openDepositModal()">Abrir depósito</button>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">Transações</div>
+                            </div>
+                            <div class="table-wrap">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Tipo</th>
+                                            <th>Valor</th>
+                                            <th>Data</th>
+                                            <th>Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="transacoes-tbody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="page-config" class="page">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Configuração API</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="resultsBase">Results API</label>
+                            <input id="resultsBase" class="form-input" type="text"
+                                placeholder="http://localhost:5221/api" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="bettingBase">Betting API</label>
+                            <input id="bettingBase" class="form-input" type="text"
+                                placeholder="http://localhost:5223/api" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="paymentsBase">Payments API</label>
+                            <input id="paymentsBase" class="form-input" type="text"
+                                placeholder="http://localhost:5224/api" />
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn secondary btn-sm" onclick="resetConfig()">Restaurar padrão</button>
+                            <button class="btn primary btn-sm" onclick="saveConfig()">Salvar</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

@@ -1,11 +1,13 @@
-﻿using System.Text;
+﻿using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 
 Console.WriteLine("Waiting for API to start...");
 await Task.Delay(5000);
 
 var client = new HttpClient();
-var baseUrl = "http://localhost:5221/api/jogos";
+var jogosUrl = "http://localhost:5221/api/jogos";
+var apostasUrl = "http://localhost:5221/api/apostas";
 
 var handler = new HttpClientHandler();
 handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
@@ -27,6 +29,8 @@ var competicoes = new List<string>
     "Liga dos Campeões UEFA",
     "Liga Europa"
 };
+
+await DeletePreviousGames(client, jogosUrl, apostasUrl);
 
 // Phase 1 - Generate and publish calendar
 Console.WriteLine("=== Phase 1 - Publishing Calendar ===");
@@ -64,7 +68,7 @@ for (int i = 0; i < emparelhamentos.Count; i++)
 
     var json = JsonSerializer.Serialize(jogo);
     var content = new StringContent(json, Encoding.UTF8, "application/json");
-    var response = await client.PostAsync(baseUrl, content);
+    var response = await client.PostAsync(jogosUrl, content);
 
     if (response.IsSuccessStatusCode)
         Console.WriteLine($"Game published: {codigo} - {emparelhamentos[i].casa} vs {emparelhamentos[i].fora} [{competicao}]");
@@ -82,7 +86,7 @@ var tasks = jogosGerados.Select(async codigo =>
     var r = new Random();
     int golosCasa = 0, golosFora = 0;
 
-    await UpdateJogo(client, baseUrl, codigo, 2, golosCasa, golosFora);
+    await UpdateJogo(client, jogosUrl, codigo, 2, golosCasa, golosFora);
     Console.WriteLine($"{codigo} - Started");
 
     for (int minuto = 0; minuto < 9; minuto++)
@@ -92,11 +96,11 @@ var tasks = jogosGerados.Select(async codigo =>
         if (r.Next(0, 10) < 2) golosCasa++;
         if (r.Next(0, 10) < 2) golosFora++;
 
-        await UpdateJogo(client, baseUrl, codigo, 2, golosCasa, golosFora);
+        await UpdateJogo(client, jogosUrl, codigo, 2, golosCasa, golosFora);
         Console.WriteLine($"{codigo} - {golosCasa}:{golosFora}");
     }
 
-    await UpdateJogo(client, baseUrl, codigo, 3, golosCasa, golosFora);
+    await UpdateJogo(client, jogosUrl, codigo, 3, golosCasa, golosFora);
     Console.WriteLine($"{codigo} - Finished! Final: {golosCasa}:{golosFora}");
 });
 

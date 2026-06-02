@@ -99,15 +99,32 @@ services:
     networks:
       - betstrike-net
 
+  web-ui:
+    image: nginx:alpine
+    container_name: betstrike-web-ui
+    ports:
+      - "8000:80"
+    volumes:
+      - ./web-ui:/usr/share/nginx/html:ro
+    depends_on:
+      resultsapi:
+        condition: service_started
+      bettingapi:
+        condition: service_started
+      paymentsapi:
+        condition: service_started
+    networks:
+      - betstrike-net
+
 # ============================================
 # Named volume so SQL Server data persists across restarts
 # ============================================
 volumes:
   sqlserver-data:
 
-# ============================================
-# Internal network so containers can resolve each other by name
-# ============================================
+    # ============================================
+    # Internal network so containers can resolve each other by name
+    # ============================================
 networks:
   betstrike-net:
     driver: bridge
