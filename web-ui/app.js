@@ -60,7 +60,14 @@ function normalizeAposta(aposta) {
         Valor_Apostado: getProp(aposta, 'Valor_Apostado', 'valor_Apostado', 'valorApostado', 'valor_apostado'),
         Odd_Momento: getProp(aposta, 'Odd_Momento', 'odd_Momento', 'oddMomento', 'odd_momento'),
         Estado: getProp(aposta, 'Estado', 'estado'),
-        Data_Hora_Aposta: getProp(aposta, 'Data_Hora_Aposta', 'data_Hora_Aposta', 'dataHoraAposta', 'data_hora_aposta')
+        Data_Hora_Aposta: getProp(aposta, 'Data_Hora_Aposta', 'data_Hora_Aposta', 'dataHoraAposta', 'data_hora_aposta'),
+        Equipa_Casa: getProp(aposta, 'Equipa_Casa', 'equipa_Casa', 'equipaCasa', 'equipa_casa'),
+        Equipa_Fora: getProp(aposta, 'Equipa_Fora', 'equipa_Fora', 'equipaFora', 'equipa_fora'),
+        Tipo_Competicao: getProp(aposta, 'Tipo_Competicao', 'tipo_Competicao', 'tipoCompeticao', 'tipo_competicao'),
+        Data_Hora_Inicio: getProp(aposta, 'Data_Hora_Inicio', 'data_Hora_Inicio', 'dataHoraInicio', 'data_hora_inicio'),
+        Golos_Casa: getProp(aposta, 'Golos_Casa', 'golos_Casa', 'golosCasa', 'golos_casa'),
+        Golos_Fora: getProp(aposta, 'Golos_Fora', 'golos_Fora', 'golosFora', 'golos_fora'),
+        Estado_Jogo: getProp(aposta, 'Estado_Jogo', 'estado_Jogo', 'estadoJogo', 'estado_jogo')
     };
 }
 
@@ -366,12 +373,24 @@ async function loadApostas() {
         const apostas = await fetchJson(`${config.bettingBase}/apostas?utilizadorId=${appState.user.id}`);
         appState.apostas = apostas.map(a => {
             const normalized = normalizeAposta(a);
+            const stake = parseFloat(normalized.Valor_Apostado || 0);
+            const oddValue = parseFloat(normalized.Odd_Momento || 0);
             return {
                 id: normalized.ID,
-                jogo: normalized.Jogo_ID ? `Jogo #${normalized.Jogo_ID}` : normalized.Codigo_Jogo || 'Desconhecido',
+                jogoId: normalized.Jogo_ID,
+                codigoJogo: normalized.Codigo_Jogo,
+                casa: normalized.Equipa_Casa || 'Casa',
+                fora: normalized.Equipa_Fora || 'Fora',
+                competencia: normalized.Tipo_Competicao || 'Competição',
+                inicio: normalized.Data_Hora_Inicio ? new Date(normalized.Data_Hora_Inicio) : null,
+                golosCasa: normalized.Golos_Casa ?? null,
+                golosFora: normalized.Golos_Fora ?? null,
+                estadoNumerico: normalized.Estado_Jogo ?? normalized.Estado,
                 tipo: normalized.Tipo_Aposta || '1X2',
-                valor: `${parseFloat(normalized.Valor_Apostado || 0).toFixed(2)}€`,
-                odd: parseFloat(normalized.Odd_Momento || 0).toFixed(2),
+                valor: stake,
+                valorFormatado: `${stake.toFixed(2)}€`,
+                odd: oddValue.toFixed(2),
+                potencial: (stake * oddValue) || 0,
                 estado: mapApostaEstado(normalized.Estado),
                 data: new Date(normalized.Data_Hora_Aposta).toLocaleDateString('pt-PT')
             };
@@ -401,18 +420,65 @@ async function loadTransacoes() {
     }
 }
 
+function formatGameScore(casa, fora, jogoEstado) {
+    if (jogoEstado === 1) return '—';
+    if (casa == null || fora == null) return '0 - 0';
+    return `${casa} - ${fora}`;
+}
+
+function formatGameStateLabel(estado) {
+    return estado === 2 ? 'Ao Vivo' : estado === 3 ? 'Finalizado' : 'Agendado';
+}
+
+function formatGameDate(data) {
+    if (!data) return 'Sem data';
+    return new Intl.DateTimeFormat('pt-PT', { dateStyle: 'short', timeStyle: 'short' }).format(data);
+}
+
 function renderApostas(apostas) {
-    document.getElementById('apostas-tbody').innerHTML = apostas.map(aposta => `
-        <tr>
-            <td>#${aposta.id}</td>
-            <td>${aposta.jogo}</td>
-            <td>${aposta.tipo}</td>
-            <td>${aposta.valor}</td>
-            <td>${aposta.odd}</td>
-            <td>${aposta.estado}</td>
-            <td>${aposta.data}</td>
-        </tr>
-    `).join('');
+    const apostasList = document.getElementById('apostas-list');
+    apostasList.innerHTML = apostas.length > 0 ? apostas.map(aposta => `
+        <article class="aposta-card">
+            <div class="aposta-card-header">
+                <div>
+                    <div class="aposta-competition">${aposta.competencia}</div>
+                    <div class="aposta-kickoff">${formatGameDate(aposta.inicio)}</div>
+                </div>
+                <span class="aposta-badge ${aposta.estado.toLowerCase()}">${aposta.estado}</span>
+            </div>
+
+            <div class="aposta-match">
+                <div class="aposta-team home">${aposta.casa}</div>
+                <div class="aposta-score">${formatGameScore(aposta.golosCasa, aposta.golosFora, aposta.estadoNumerico)}</div>
+                <div class="aposta-team away">${aposta.fora}</div>
+            </div>
+
+            <div class="aposta-details">
+                <div class="aposta-detail">
+                    <span>Tipo</span>
+                    <strong>${aposta.tipo}</strong>
+                </div>
+                <div class="aposta-detail">
+                    <span>Aposta</span>
+                    <strong>${aposta.valorFormatado}</strong>
+                </div>
+                <div class="aposta-detail">
+                    <span>Odd</span>
+                    <strong>${aposta.odd}</strong>
+                </div>
+                <div class="aposta-detail">
+                    <span>Potencial</span>
+                    <strong>${aposta.potencial.toFixed(2)}€</strong>
+                </div>
+            </div>
+
+            <div class="aposta-meta">
+                <span class="aposta-code">${aposta.codigoJogo || `#${aposta.jogoId}`}</span>
+                <span class="aposta-game-state">${formatGameStateLabel(aposta.estadoNumerico)}</span>
+            </div>
+        </article>
+    `).join('') : '<div class="empty-state">Nenhuma aposta encontrada. Faça uma aposta para ver o detalhe do jogo aqui.</div>';
+
     document.getElementById('st-total').textContent = apostas.length;
     document.getElementById('st-ganhas').textContent = apostas.filter(a => a.estado === 'Ganha').length;
     document.getElementById('st-perdidas').textContent = apostas.filter(a => a.estado === 'Perdida').length;

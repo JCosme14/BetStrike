@@ -27,8 +27,19 @@ namespace BettingAPI.Controllers
             using var conn = _db.GetConnection();
             conn.Open();
 
-            using var cmd = new SqlCommand("sp_GetApostas", conn);
-            cmd.CommandType = System.Data.CommandType.StoredProcedure;
+            var query = @"
+                SELECT a.ID, a.Jogo_ID, a.Utilizador_ID, a.Tipo_Aposta, a.Valor_Apostado, a.Odd_Momento, a.Estado, a.Data_Hora_Aposta,
+                    j.Codigo_Jogo, j.Data_Hora_Inicio, j.Equipa_Casa, j.Equipa_Fora, j.Tipo_Competicao, j.Golos_Casa, j.Golos_Fora, j.Estado AS Estado_Jogo
+                FROM Aposta a
+                INNER JOIN Jogo j ON a.Jogo_ID = j.ID
+                WHERE (@Utilizador_ID IS NULL OR a.Utilizador_ID = @Utilizador_ID)
+                    AND (@Jogo_ID IS NULL OR a.Jogo_ID = @Jogo_ID)
+                    AND (@Estado IS NULL OR a.Estado = @Estado)
+                    AND (@Data_Inicio IS NULL OR a.Data_Hora_Aposta >= @Data_Inicio)
+                    AND (@Data_Fim IS NULL OR a.Data_Hora_Aposta <= @Data_Fim);
+            ";
+
+            using var cmd = new SqlCommand(query, conn);
             cmd.Parameters.AddWithValue("@Utilizador_ID", utilizadorId.HasValue ? utilizadorId.Value : DBNull.Value);
             cmd.Parameters.AddWithValue("@Jogo_ID", jogoId.HasValue ? jogoId.Value : DBNull.Value);
             cmd.Parameters.AddWithValue("@Estado", estado.HasValue ? estado.Value : DBNull.Value);
@@ -47,7 +58,15 @@ namespace BettingAPI.Controllers
                     Valor_Apostado = (decimal)reader["Valor_Apostado"],
                     Odd_Momento = (decimal)reader["Odd_Momento"],
                     Estado = (int)reader["Estado"],
-                    Data_Hora_Aposta = (DateTime)reader["Data_Hora_Aposta"]
+                    Data_Hora_Aposta = (DateTime)reader["Data_Hora_Aposta"],
+                    Codigo_Jogo = reader["Codigo_Jogo"].ToString(),
+                    Data_Hora_Inicio = reader["Data_Hora_Inicio"] == DBNull.Value ? null : (DateTime?)reader["Data_Hora_Inicio"],
+                    Equipa_Casa = reader["Equipa_Casa"].ToString(),
+                    Equipa_Fora = reader["Equipa_Fora"].ToString(),
+                    Tipo_Competicao = reader["Tipo_Competicao"] == DBNull.Value ? null : reader["Tipo_Competicao"].ToString(),
+                    Golos_Casa = reader["Golos_Casa"] == DBNull.Value ? null : (int?)reader["Golos_Casa"],
+                    Golos_Fora = reader["Golos_Fora"] == DBNull.Value ? null : (int?)reader["Golos_Fora"],
+                    Estado_Jogo = reader["Estado_Jogo"] == DBNull.Value ? null : (int?)reader["Estado_Jogo"]
                 });
             }
 
@@ -61,8 +80,15 @@ namespace BettingAPI.Controllers
             using var conn = _db.GetConnection();
             conn.Open();
 
-            using var cmd = new SqlCommand("sp_GetAposta", conn);
-            cmd.CommandType = System.Data.CommandType.StoredProcedure;
+            var query = @"
+                SELECT a.ID, a.Jogo_ID, a.Utilizador_ID, a.Tipo_Aposta, a.Valor_Apostado, a.Odd_Momento, a.Estado, a.Data_Hora_Aposta,
+                    j.Codigo_Jogo, j.Data_Hora_Inicio, j.Equipa_Casa, j.Equipa_Fora, j.Tipo_Competicao, j.Golos_Casa, j.Golos_Fora, j.Estado AS Estado_Jogo
+                FROM Aposta a
+                INNER JOIN Jogo j ON a.Jogo_ID = j.ID
+                WHERE a.ID = @ID;
+            ";
+
+            using var cmd = new SqlCommand(query, conn);
             cmd.Parameters.AddWithValue("@ID", id);
 
             using var reader = cmd.ExecuteReader();
@@ -77,7 +103,15 @@ namespace BettingAPI.Controllers
                     Valor_Apostado = (decimal)reader["Valor_Apostado"],
                     Odd_Momento = (decimal)reader["Odd_Momento"],
                     Estado = (int)reader["Estado"],
-                    Data_Hora_Aposta = (DateTime)reader["Data_Hora_Aposta"]
+                    Data_Hora_Aposta = (DateTime)reader["Data_Hora_Aposta"],
+                    Codigo_Jogo = reader["Codigo_Jogo"].ToString(),
+                    Data_Hora_Inicio = reader["Data_Hora_Inicio"] == DBNull.Value ? null : (DateTime?)reader["Data_Hora_Inicio"],
+                    Equipa_Casa = reader["Equipa_Casa"].ToString(),
+                    Equipa_Fora = reader["Equipa_Fora"].ToString(),
+                    Tipo_Competicao = reader["Tipo_Competicao"] == DBNull.Value ? null : reader["Tipo_Competicao"].ToString(),
+                    Golos_Casa = reader["Golos_Casa"] == DBNull.Value ? null : (int?)reader["Golos_Casa"],
+                    Golos_Fora = reader["Golos_Fora"] == DBNull.Value ? null : (int?)reader["Golos_Fora"],
+                    Estado_Jogo = reader["Estado_Jogo"] == DBNull.Value ? null : (int?)reader["Estado_Jogo"]
                 };
 
                 var premioPotencial = aposta.Valor_Apostado * aposta.Odd_Momento;
